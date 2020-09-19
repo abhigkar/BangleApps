@@ -1,5 +1,8 @@
 (() => {
-  var switchableConsumers = {
+  let recordingInterval = null;
+  const Storage = require("Storage");
+  
+  const switchableConsumers = {
     none: 0,
     lcd: 1,
     compass: 2,
@@ -8,72 +11,114 @@
     hrm: 16
   };
 
-  var settings = {};
   var batChartFile; // file for battery percentage recording
   const recordingInterval10Min = 60 * 10 * 1000;
-  const recordingInterval1Min = 60*1000; //For testing 
-  const recordingInterval10S = 10*1000; //For testing 
-  var recordingInterval = null;
+  const recordingInterval1Min = 60 * 1000; //For testing
+  const recordingInterval10S = 10 * 1000; //For testing
 
-  // draw your widget
+  var compassEventReceived = false;
+  var gpsEventReceived = false;
+  var hrmEventReceived = false;
+
   function draw() {
-    g.reset();
-    g.drawString("BC", this.x, this.y);
+    // void
+  }
+
+  function batteryChartOnMag() {
+    compassEventReceived = true;
+    // Stop handling events when no longer necessarry
+    Bangle.removeListener("mag", batteryChartOnMag);
+  }
+
+  function batterChartOnGps() {
+    gpsEventReceived = true;
+    Bangle.removeListener("GPS", batterChartOnGps);
+  }
+
+  function batteryChartOnHrm() {
+    hrmEventReceived = true;
+    Bangle.removeListener("HRM", batteryChartOnHrm);
   }
 
   function getEnabledConsumersValue() {
+    // Wait for an event from each of the devices to see if they are switched on
     var enabledConsumers = switchableConsumers.none;
+
+    Bangle.on('mag', batteryChartOnMag);
+    Bangle.on('GPS', batterChartOnGps);
+    Bangle.on('HRM', batteryChartOnHrm);
+
+    // Wait two seconds, that should be enough for each of the events to get raised once
+    setTimeout(() => {
+      Bangle.removeListener('mag', batteryChartOnMag);
+      Bangle.removeListener('GPS', batterChartOnGps);
+      Bangle.removeListener('HRM', batteryChartOnHrm);
+    }, 2000);
 
     if (Bangle.isLCDOn())
       enabledConsumers = enabledConsumers | switchableConsumers.lcd;
-    // Already added in the hope they will be available soon to get more details
-    // if (Bangle.isCompassOn())
-    //   enabledConsumers = enabledConsumers | switchableConsumers.compass;
-    // if (Bangle.isBluetoothOn())
-    //   enabledConsumers = enabledConsumers | switchableConsumers.bluetooth;
-    // if (Bangle.isGpsOn())
-    //   enabledConsumers = enabledConsumers | switchableConsumers.gps;
-    // if (Bangle.isHrmOn())
-    //   enabledConsumers = enabledConsumers | switchableConsumers.hrm;
+    if (compassEventReceived)
+      enabledConsumers = enabledConsumers | switchableConsumers.compass;
+    if (gpsEventReceived)
+      enabledConsumers = enabledConsumers | switchableConsumers.gps;
+    if (hrmEventReceived)
+      enabledConsumers = enabledConsumers | switchableConsumers.hrm;
 
-    return enabledConsumers;
+    // Very coarse first approach to check if the BLE device is on.
+    if (NRF.getSecurityStatus().connected)
+      enabledConsumers = enabledConsumers | switchableConsumers.bluetooth;
+
+    // Reset the event registration vars
+    compassEventReceived = false;
+    gpsEventReceived = false;
+    hrmEventReceived = false;
+
+    return enabledConsumers.toString();
   }
 
   function logBatteryData() {
     const previousWriteLogName = "bcprvday";
-    const previousWriteDay = require("Storage").read(previousWriteLogName);
+    const previousWriteDay = parseInt(Storage.open(previousWriteLogName, "r").readLine());
     const currentWriteDay = new Date().getDay();
 
     const logFileName = "bclog" + currentWriteDay;
 
     // Change log target on day change
-    if (previousWriteDay != currentWriteDay) {
+    if (!isNaN(previousWriteDay) && previousWriteDay != currentWriteDay) {
       //Remove a log file containing data from a week ago
-      require("Storage").erase(logFileName);
-      require("Storage").write(previousWriteLogName, currentWriteDay);
+      Storage.open(logFileName, "r").erase();
+      Storage.open(previousWriteLogName, "w").write(parseInt(currentWriteDay));
     }
 
-    var bcLogFileA = require("Storage").open(logFileName, "a");
+    var bcLogFileA = Storage.open(logFileName, "a");
     if (bcLogFileA) {
-      console.log([getTime().toFixed(0), E.getBattery(), E.getTemperature(), getEnabledConsumersValue()].join(","));
-      bcLogFileA.write([[getTime().toFixed(0), E.getBattery(), E.getTemperature(), getEnabledConsumersValue()].join(",")].join(",")+"\n");
+      let logTime = getTime().toFixed(0);
+      let logPercent = E.getBattery();
+      let logTemperature = E.getTemperature();
+      let logConsumers = getEnabledConsumersValue();
+      
+      let logString = [logTime, logPercent, logTemperature, logConsumers].join(",");
+      
+      bcLogFileA.write(logString + "\n");
     }
   }
 
-  // Called by the heart app to reload settings and decide what's
   function reload() {
-    WIDGETS["batchart"].width = 24;
+    console.log("Reloading BatteryChart widget");
+    WIDGETS["batchart"].width = 0;
+
+    if (recordingInterval) {
+      clearInterval(recordingInterval);
+      recordingInterval = null;
+    }
 
     recordingInterval = setInterval(logBatteryData, recordingInterval10Min);
-
-    logBatteryData();
   }
 
   // add the widget
-  WIDGETS["batchart"]={area:"tl",width:24,draw:draw,reload:function() {
-    reload();
-    Bangle.drawWidgets(); // relayout all widgets
-  }};
-  // load settings, set correct widget width
+  WIDGETS["batchart"] = {
+    area: "tl", width: 0, draw: draw, reload: reload
+  };
+
   reload();
-})()
+})();

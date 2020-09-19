@@ -1,9 +1,8 @@
 (function() {
-  let s = require('Storage').readJSON('setting.json', 1) || {}
-  if (!s.welcomed && require('Storage').read('welcome.app.js')) {
+  let s = require('Storage').readJSON('welcome.json', 1) || {};
+  if (!s.welcomed) {
     setTimeout(() => {
-      s.welcomed = true
-      require('Storage').write('setting.json', s)
+      require('Storage').write('welcome.json', {welcomed: true})
       load('welcome.app.js')
     })
   }

@@ -61,43 +61,19 @@ const boolFormat = v => v ? "On" : "Off";
 function showMainMenu() {
   var beepV = [false, true, "vib"];
   var beepN = ["Off", "Piezo", "Vibrate"];
+  var hidV = [false, "kbmedia", "kb", "joy"];
+  var hidN = ["Off", "Kbrd & Media", "Kbrd","Joystick"];
   const mainmenu = {
     '': { 'title': 'Settings' },
     'Make Connectable': ()=>makeConnectable(),
-    'App/widget settings': ()=>showAppSettingsMenu(),
-    'BLE': {
-      value: settings.ble,
-      format: boolFormat,
-      onchange: () => {
-        settings.ble = !settings.ble;
-        updateSettings();
-      }
-    },
-    'Programmable': {
-      value: settings.blerepl,
-      format: boolFormat,
-      onchange: () => {
-        settings.blerepl = !settings.blerepl;
-        updateSettings();
-      }
-    },
-    'Debug info': {
+    'App/Widget Settings': ()=>showAppSettingsMenu(),
+    'BLE': ()=>showBLEMenu(),
+    'Debug Info': {
       value: settings.log,
       format: v => v ? "Show" : "Hide",
       onchange: () => {
         settings.log = !settings.log;
         updateSettings();
-      }
-    },
-    'LCD Brightness': {
-      value: settings.brightness,
-      min: 0.1,
-      max: 1,
-      step: 0.1,
-      onchange: v => {
-        settings.brightness = v || 1;
-        updateSettings();
-        Bangle.setLCDBrightness(settings.brightness);
       }
     },
     'Beep': {
@@ -126,15 +102,16 @@ function showMainMenu() {
     'Locale': ()=>showLocaleMenu(),
     'Select Clock': ()=>showClockMenu(),
     'HID': {
-      value: settings.HID,
-      format: boolFormat,
-      onchange: () => {
-        settings.HID = !settings.HID;
+      value: 0 | hidV.indexOf(settings.HID),
+      min: 0, max: 3,
+      format: v => hidN[v],
+      onchange: v => {
+        settings.HID = hidV[v];
         updateSettings();
       }
     },
     'Set Time': ()=>showSetTimeMenu(),
-    'LCD Wake-Up': ()=>showWakeUpMenu(),
+    'LCD': ()=>showLCDMenu(),
     'Reset Settings': ()=>showResetMenu(),
     'Turn Off': ()=>Bangle.off(),
     '< Back': ()=>load()
@@ -142,10 +119,114 @@ function showMainMenu() {
   return E.showMenu(mainmenu);
 }
 
-function showWakeUpMenu() {
-  const wakeUpMenu = {
-    '': { 'title': 'LCD Wake-Up' },
+function showBLEMenu() {
+  E.showMenu({
+    'BLE': {
+      value: settings.ble,
+      format: boolFormat,
+      onchange: () => {
+        settings.ble = !settings.ble;
+        updateSettings();
+      }
+    },
+    'Programmable': {
+      value: settings.blerepl,
+      format: boolFormat,
+      onchange: () => {
+        settings.blerepl = !settings.blerepl;
+        updateSettings();
+      }
+    },
+    'Passkey BETA': {
+      value: settings.passkey?settings.passkey:"none",
+      onchange: () => setTimeout(showPasskeyMenu) // graphical_menu redraws after the call
+    },
+    'Whitelist': {
+      value: settings.whitelist?(settings.whitelist.length+" devs"):"off",
+      onchange: () => setTimeout(showWhitelistMenu) // graphical_menu redraws after the call
+    },
+    '< Back': ()=>showMainMenu()
+  });
+}
+
+function showPasskeyMenu() {
+  var menu = {
+    "Disable" : () => {
+      settings.passkey = undefined;
+      updateSettings();
+      showBLEMenu();
+    }
+  };
+  if (!settings.passkey || settings.passkey.length!=6)
+    settings.passkey = "123456";
+  for (var i=0;i<6;i++) (function(i){
+    menu[`Digit ${i+1}`] = {
+      value : 0|settings.passkey[i],
+      min: 0, max: 9,
+      onchange: v => {
+        var p = settings.passkey.split("");
+        p[i] = v;
+        settings.passkey = p.join("");
+        updateSettings();
+      }
+    };
+  })(i);
+  menu['< Back']=()=>showBLEMenu();
+  E.showMenu(menu);
+}
+
+function showWhitelistMenu() {
+  var menu = {
+    "Disable" : () => {
+      settings.whitelist = undefined;
+      updateSettings();
+      showBLEMenu();
+    }
+  };
+  if (settings.whitelist) settings.whitelist.forEach(function(d){
+    menu[d.substr(0,17)] = function() {
+      E.showPrompt('Remove\n'+d).then((v) => {
+        if (v) {
+          settings.whitelist.splice(settings.whitelist.indexOf(d),1);
+          updateSettings();
+        }
+        setTimeout(showWhitelistMenu, 50);
+      });
+    }
+  });
+  menu['Add Device']=function() {
+    E.showAlert("Connect device\nto add to\nwhitelist","Whitelist").then(function() {
+      NRF.removeAllListeners('connect');
+      showWhitelistMenu();
+    });
+    NRF.removeAllListeners('connect');
+    NRF.on('connect', function(addr) {
+      if (!settings.whitelist) settings.whitelist=[];
+      settings.whitelist.push(addr);
+      updateSettings();
+      NRF.removeAllListeners('connect');
+      showWhitelistMenu();
+    });
+  };
+  menu['< Back']=()=>showBLEMenu();
+  E.showMenu(menu);
+}
+
+function showLCDMenu() {
+  const lcdMenu = {
+    '': { 'title': 'LCD' },
     '< Back': ()=>showMainMenu(),
+    'LCD Brightness': {
+      value: settings.brightness,
+      min: 0.1,
+      max: 1,
+      step: 0.1,
+      onchange: v => {
+        settings.brightness = v || 1;
+        updateSettings();
+        Bangle.setLCDBrightness(settings.brightness);
+      }
+    },
     'LCD Timeout': {
       value: settings.timeout,
       min: 0,
@@ -157,7 +238,7 @@ function showWakeUpMenu() {
         Bangle.setLCDTimeout(settings.timeout);
       }
     },
-    'Wake On BTN1': {
+    'Wake on BTN1': {
       value: settings.options.wakeOnBTN1,
       format: boolFormat,
       onchange: () => {
@@ -165,7 +246,7 @@ function showWakeUpMenu() {
         updateOptions();
       }
     },
-    'Wake On BTN2': {
+    'Wake on BTN2': {
       value: settings.options.wakeOnBTN2,
       format: boolFormat,
       onchange: () => {
@@ -173,7 +254,7 @@ function showWakeUpMenu() {
         updateOptions();
       }
     },
-    'Wake On BTN3': {
+    'Wake on BTN3': {
       value: settings.options.wakeOnBTN3,
       format: boolFormat,
       onchange: () => {
@@ -197,7 +278,7 @@ function showWakeUpMenu() {
         updateOptions();
       }
     },
-    'Wake On Twist': {
+    'Wake on Twist': {
       value: settings.options.wakeOnTwist,
       format: boolFormat,
       onchange: () => {
@@ -236,7 +317,7 @@ function showWakeUpMenu() {
       }
     }
   }
-  return E.showMenu(wakeUpMenu)
+  return E.showMenu(lcdMenu)
 }
 
 function showLocaleMenu() {
@@ -296,10 +377,10 @@ function makeConnectable() {
   });
 }
 function showClockMenu() {
-  var clockApps = require("Storage").list(/\.info$/).map(app => {
-    try { return require("Storage").readJSON(app); }
-    catch (e) { }
-  }).filter(app => app.type == "clock").sort((a, b) => a.sortorder - b.sortorder);
+  var clockApps = require("Storage").list(/\.info$/)
+    .map(app => {var a=storage.readJSON(app, 1);return (a&&a.type == "clock")?a:undefined})
+    .filter(app => app) // filter out any undefined apps
+    .sort((a, b) => a.sortorder - b.sortorder);
   const clockMenu = {
     '': {
       'title': 'Select Clock',
@@ -325,88 +406,55 @@ function showClockMenu() {
   return E.showMenu(clockMenu);
 }
 
-
-
 function showSetTimeMenu() {
   d = new Date();
   const timemenu = {
-    '': {
-      'title': 'Set Time',
-      'predraw': function () {
-        d = new Date();
-        timemenu.Hour.value = d.getHours();
-        timemenu.Minute.value = d.getMinutes();
-        timemenu.Second.value = d.getSeconds();
-        timemenu.Date.value = d.getDate();
-        timemenu.Month.value = d.getMonth() + 1;
-        timemenu.Year.value = d.getFullYear();
-      }
+    '': { 'title': 'Set Time' },
+    '< Back': function () {
+      setTime(d.getTime() / 1000);
+      showMainMenu();
     },
-    '< Back': ()=>showMainMenu(),
     'Hour': {
       value: d.getHours(),
-      min: 0,
-      max: 23,
-      step: 1,
-      onchange: v => {
-        d = new Date();
-        d.setHours(v);
-        setTime(d.getTime() / 1000);
+      onchange: function (v) {
+        this.value = (v+24)%24;
+        d.setHours(this.value);
       }
     },
     'Minute': {
       value: d.getMinutes(),
-      min: 0,
-      max: 59,
-      step: 1,
-      onchange: v => {
-        d = new Date();
-        d.setMinutes(v);
-        setTime(d.getTime() / 1000);
+      onchange: function (v) {
+        this.value = (v+60)%60;
+        d.setMinutes(this.value);
       }
     },
     'Second': {
       value: d.getSeconds(),
-      min: 0,
-      max: 59,
-      step: 1,
-      onchange: v => {
-        d = new Date();
-        d.setSeconds(v);
-        setTime(d.getTime() / 1000);
+      onchange: function (v) {
+        this.value = (v+60)%60;
+        d.setSeconds(this.value);
       }
     },
     'Date': {
       value: d.getDate(),
-      min: 1,
-      max: 31,
-      step: 1,
-      onchange: v => {
-        d = new Date();
-        d.setDate(v);
-        setTime(d.getTime() / 1000);
+      onchange: function (v) {
+        this.value = ((v+30)%31)+1;
+        d.setDate(this.value);
       }
     },
     'Month': {
       value: d.getMonth() + 1,
-      min: 1,
-      max: 12,
-      step: 1,
-      onchange: v => {
-        d = new Date();
-        d.setMonth(v - 1);
-        setTime(d.getTime() / 1000);
+      onchange: function (v) {
+        this.value = ((v+11)%12)+1;
+        d.setMonth(this.value - 1);
       }
     },
     'Year': {
       value: d.getFullYear(),
       min: 2019,
       max: 2100,
-      step: 1,
-      onchange: v => {
-        d = new Date();
+      onchange: function (v) {
         d.setFullYear(v);
-        setTime(d.getTime() / 1000);
       }
     }
   };
@@ -418,10 +466,19 @@ function showAppSettingsMenu() {
     '': { 'title': 'App Settings' },
     '< Back': ()=>showMainMenu(),
   }
-  const apps = storage.list(/\.info$/)
-    .map(app => storage.readJSON(app, 1))
-    .filter(app => app && app.settings)
-    .sort((a, b) => a.sortorder - b.sortorder)
+  const apps = storage.list(/\.settings\.js$/)
+    .map(s => s.substr(0, s.length-12))
+    .map(id => {
+      const a=storage.readJSON(id+'.info',1) || {name: id};
+      return {id:id,name:a.name,sortorder:a.sortorder};
+    })
+    .sort((a, b) => {
+      const n = (0|a.sortorder)-(0|b.sortorder);
+      if (n) return n; // do sortorder first
+      if (a.name<b.name) return -1;
+      if (a.name>b.name) return 1;
+      return 0;
+    })
   if (apps.length === 0) {
     appmenu['No app has settings'] = () => { };
   }
@@ -435,10 +492,7 @@ function showAppSettings(app) {
     E.showMessage(`${app.name}:\n${msg}!\n\nBTN1 to go back`);
     setWatch(showAppSettingsMenu, BTN1, { repeat: false });
   }
-  let appSettings = storage.read(app.settings);
-  if (!appSettings) {
-    return showError('Missing settings');
-  }
+  let appSettings = storage.read(app.id+'.settings.js');
   try {
     appSettings = eval(appSettings);
   } catch (e) {
@@ -450,7 +504,7 @@ function showAppSettings(app) {
   }
   try {
     // pass showAppSettingsMenu as "back" argument
-    appSettings(showAppSettingsMenu);
+    appSettings(()=>showAppSettingsMenu());
   } catch (e) {
     console.log(`${app.name} settings error:`, e)
     return showError('Error in settings');
