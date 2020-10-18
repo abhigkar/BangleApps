@@ -1,11 +1,11 @@
 [
   { "id": "boot",
     "name": "Bootloader",
+    "tags": "tool,system",
+    "type":"bootloader",
     "icon": "bootloader.png",
     "version":"0.21",
     "description": "This is needed by Bangle.js to automatically load the clock, menu, widgets and settings",
-    "tags": "tool,system",
-    "type":"bootloader",
     "storage": [
       {"name":".boot0","url":"boot0.js"},
       {"name":".bootcde","url":"bootloader.js"}
@@ -80,7 +80,7 @@
     "name": "Notifications (default)",
     "shortName":"Notifications",
     "icon": "notify.png",
-    "version":"0.03",
+    "version":"0.05",
     "description": "A handler for displaying notifications that displays them in a bar at the top of the screen",
     "tags": "widget",
     "type": "notify",
@@ -93,7 +93,7 @@
     "name": "Fullscreen Notifications",
     "shortName":"Notifications",
     "icon": "notify.png",
-    "version":"0.04",
+    "version":"0.06",
     "description": "A handler for displaying notifications that displays them fullscreen. This may not fully restore the screen after on some apps. See `Notifications (default)` for more information about the notifications library.",
     "tags": "widget",
     "type": "notify",
@@ -116,6 +116,24 @@
     ],
     "data": [
       {"name":"welcome.json"}
+    ]
+  },
+  { "id": "mywelcome",
+    "name": "Customised Welcome",
+    "shortName": "My Welcome",
+    "icon": "app.png",
+    "version":"0.10",
+    "description": "Appears at first boot and explains how to use Bangle.js. Like 'Welcome', but can be customised with a greeting",
+    "tags": "start,welcome",
+    "custom":"custom.html",
+    "storage": [
+      {"name":"mywelcome.boot.js","url":"boot.js"},
+      {"name":"mywelcome.app.js","url":"app.js"},
+      {"name":"mywelcome.settings.js","url":"settings.js"},
+      {"name":"mywelcome.img","url":"app-icon.js","evaluate":true}
+    ],
+    "data": [
+      {"name":"mywelcome.json"}
     ]
   },
   { "id": "gbridge",
@@ -152,7 +170,7 @@
   { "id": "setting",
     "name": "Settings",
     "icon": "settings.png",
-    "version":"0.21",
+    "version":"0.22",
     "description": "A menu for setting up Bangle.js",
     "tags": "tool,system",
     "readme": "README.md",
@@ -692,6 +710,19 @@
       {"name":"sclock.img","url":"clock-simple-icon.js","evaluate":true}
     ]
   },
+  { "id": "vibrclock",
+    "name": "Vibrate Clock",
+    "icon": "app.png",
+    "version":"0.01",
+    "description": "When BTN1 is pressed, vibrate out the time as a series of buzzes, one digit at a time. Hours, then Minutes. Zero is signified by one long buzz. Otherwise a simple digital clock.",
+    "tags": "clock",
+    "type":"clock",
+    "allow_emulator":true,
+    "storage": [
+      {"name":"vibrclock.app.js","url":"app.js"},
+      {"name":"vibrclock.img","url":"app-icon.js","evaluate":true}
+    ]
+  },
   { "id": "svclock",
     "name": "Simple V-Clock",
     "icon": "vclock-simple.png",
@@ -881,6 +912,16 @@
       {"name":"gpsinfo.app.js","url": "gps-info.js"},
       {"name":"gpsinfo.img","url": "gps-info-icon.js","evaluate": true}
     ]
+  },
+  { "id": "assistedgps",
+    "name": "Assisted GPS Update",
+    "icon": "app.png",
+    "version":"0.01",
+    "description": "Downloads assisted GPS data to Bangle.js for faster GPS startup and more accurate fixes",
+    "custom": "custom.html",
+    "tags": "tool,outdoors",
+    "type": "RAM",
+    "storage": [ ]
   },
   {
     "id": "pomodo",
@@ -1421,7 +1462,7 @@
     "name": "Digital Assistant, not EDITH",
     "shortName": "DANE",
     "icon": "app.png",
-    "version": "0.07",
+    "version": "0.10",
     "description": "A Watchface inspired by Tony Stark's EDITH",
     "tags": "clock",
     "type": "clock",
@@ -1695,7 +1736,7 @@
     "id": "simpletimer",
     "name": "Timer",
     "icon": "app.png",
-    "version": "0.05",
+    "version": "0.07",
     "description": "Simple timer, useful when playing board games or cooking",
     "tags": "timer",
     "readme": "README.md",
@@ -1745,8 +1786,8 @@
     "name": "Find Phone",
     "shortName":"Find Phone",
     "icon": "app.png",
-    "version":"0.01",
-    "description": "Find your phone via Gadgetbridge. Click any button to let your phone ring. 📳",
+    "version":"0.02",
+    "description": "Find your phone via Gadgetbridge. Click any button to let your phone ring. 📳  Note: The functionality is available even without this app, just go to Settings, App Settings, Gadgetbridge, Find Phone.",
     "tags": "tool,android",
     "readme": "README.md",
     "allow_emulator": true,
@@ -1917,8 +1958,8 @@
     "name": "Vertical watch face",
     "shortName":"Vertical Face",
     "icon": "app.png",
-    "version":"0.05",
-    "description": "A simple vertical watch face with the date.",
+    "version":"0.07",
+    "description": "A simple vertical watch face with the date. Heart rate monitor is toggled with BTN1",
     "tags": "clock",
     "type":"clock",
     "allow_emulator":true,
@@ -2186,6 +2227,19 @@
       {"name":"cscsensor.img","url":"cscsensor-icon.js","evaluate":true}
     ]
   },
+  { "id": "fileman",
+    "name": "File manager",
+    "shortName":"FileManager",
+    "icon": "icons8-filing-cabinet-48.png",
+    "version":"0.01",
+    "description": "Simple file manager, allows user to examine watch storage and display, load or delete individual files",
+    "tags": "tools",
+    "readme": "README.md",
+    "storage": [
+      {"name":"fileman.app.js","url":"fileman.app.js"},
+      {"name":"fileman.img","url":"fileman-icon.js","evaluate":true}
+    ]
+  },
  { "id": "worldclock",
     "name": "World Clock - 4 time zones",
     "shortName":"World Clock",
@@ -2201,5 +2255,32 @@
       {"name":"worldclock.settings.json"},
       {"name":"worldclock.img","url":"worldclock-icon.js","evaluate":true}
   ]
- }
+ },
+
+{ "id": "digiclock",
+  "name": "Digital Clock Face",
+  "shortName":"Digi Clock",
+  "icon": "digiclock.png",
+  "version":"0.01",
+  "description": "A simple digital clock with the time, day, month, and year",
+  "tags": "clock",
+  "type" : "clock",
+  "storage": [
+    {"name":"digiclock.app.js","url":"digiclock.js"},
+    {"name":"digiclock.img","url":"digiclock-icon.js","evaluate":true}
+ ]
+},
+  { "id": "dsdrelay",
+    "name": "DSD BLE Relay controller",
+    "shortName":"DSDRelay",
+    "icon": "icons8-relay-48.png",
+    "version":"0.01",
+    "description": "Control BLE relay board from the watch",
+    "tags": "ble,bluetooth",
+    "readme": "README.md",
+    "storage": [
+      {"name":"dsdrelay.app.js","url":"dsdrelay.app.js"},
+      {"name":"dsdrelay.img","url":"dsdrelay-icon.js","evaluate":true}
+    ]
+  }
 ]
