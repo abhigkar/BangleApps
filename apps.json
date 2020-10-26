@@ -2282,5 +2282,51 @@
       {"name":"dsdrelay.app.js","url":"dsdrelay.app.js"},
       {"name":"dsdrelay.img","url":"dsdrelay-icon.js","evaluate":true}
     ]
+  },
+{ "id": "mip",
+  "name": "Mip App",
+  "icon": "mip.png",
+  "description": "Mip Controoler App",
+  "tags": "ble,bluetooth",
+  "storage": [
+   {"name":"mip.app.js","url":"mip.js"},
+   {"name":"mip.img","url":"mip-icon.js","evaluate":true},
+   {"name":"mip.settings.js","url":"settings.js"}
+  ]
+},
+  { "id": "sam",
+    "name": "sam",
+    "shortName":"sam",
+    "icon": "sam.png",
+    "version":"0.02",
+    "description": "sam",
+    "tags": "app,bluetooth,tool",
+    "storage": [
+      {"name":"sam.app.js","url":"sam.js"},
+      {"name":"sam.img","url":"sam-icon.js","evaluate":true}
+    ]
   }
+  ,
+  {"id": "prowatch",
+  "name": "Pro watch face",
+  "icon": "prowatch.png",
+  "description": "Pro watch face",
+  "tags": "clock",
+  "type":"clock",
+  "storage": [
+   {"name":"prowatch.app.js","url":"prowatch.js"},
+   {"name":"prowatch.hrm.js","url":"hrm.js"},
+   {"name":"prowatch.img","url":"prowatch-icon.js","evaluate":true},
+   {"name":"foot.img","url":"foot.js","evaluate":true},
+   {"name":"backgrnd.img","url":"backgrnd.js","evaluate":true},
+   {"name":"bat.img","url":"bat.js","evaluate":true},
+   {"name":"charge.img","url":"charge.js","evaluate":true},
+   {"name":"heart.img","url":"heart.js","evaluate":true},
+   {"name":"heart-big.img","url":"heart-big.js","evaluate":true},
+   {"name":"prowatch.settings.js","url":"settings.js"},
+   {"name":"font-module.js","url":"font-module.js"},
+   {"name":"font-module-normal.js","url":"font-module-normal.js"},
+   {"name":"font-module-bold.js","url":"font-module-bold.js"}
+  ]
+}
 ]
